@@ -4,6 +4,9 @@ from PIL import Image
 import colorsys
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.colors as mcolors
+import matplotlib.colorbar as mcolorbar
 
 topdir = "fotos tesis finales"  # Replace with the path to your directory
 
@@ -50,23 +53,35 @@ for folder in os.listdir(topdir):
                 # Define a mask for values within 1.5*IQR of Q1 and Q3
                 mask = ((Q1 - 1.5 * IQR <= hue_values) & (hue_values <= Q3 + 1.5 * IQR))
 
-                # append the hue values to the list
-                hue_values_list.append(hue_values)
+                # Apply mask to get hue values without outliers
+                hue_values_no_outliers = hue_values[mask]
                 
+                # append the hue values to the list
+                hue_values_list.append(hue_values_no_outliers)
 
-        # Plot the boxplot
-        plt.figure(figsize=(10, 6))
-        sns.set(style="whitegrid")
-        box_plot = sns.boxplot(data=hue_values_list, palette="Set3")
+                
+    # Create the figure and axes
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-        # plot title MB measurement comes from folder name
-        measurement = int(folder[2:])
+    # Plot the boxplot on the axes
+    sns.set(style="whitegrid")
+    box_plot = sns.boxplot(ax=ax, data=hue_values_list, palette="Set3")
 
-        # You can set your own labels here
-        box_plot.set(
-            xlabel="Image",  # Modify as needed
-            ylabel="Hue",
-            title=f"Comparación antes y después del indicador MB: {measurement/10}",
-        )
-        plt.xticks([0, 1], ["1.png", "2.png"])  # Modify as needed
-        plt.savefig(os.path.join(folder_path, "boxplot.png"))
+    # plot title MB measurement comes from folder name
+    measurement = int(folder[2:])
+
+    # You can set your own labels here
+    box_plot.set(
+        xlabel="Image",  # Modify as needed
+        ylabel="Hue",
+        title=f"Comparación antes y después del indicador MB: {measurement/10}",
+    )
+    plt.xticks([0, 1], ["1.png", "2.png"])  # Modify as needed
+
+    # Create colorbar
+    cmap = mpl.cm.hsv  # Use a standard HSV colormap
+    norm = mpl.colors.Normalize(vmin=0, vmax=360)  # Range of your hue values
+    cax = fig.add_axes([0.93, 0.1, 0.02, 0.8])  # Adjust the size and position of the colorbar
+    cb = mcolorbar.ColorbarBase(cax, cmap=cmap, norm=norm, orientation='vertical')
+
+    plt.savefig(os.path.join(folder_path, "boxplot.png"))
